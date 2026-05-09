@@ -1,0 +1,288 @@
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Sora:wght@400;500;600;700&family=Syne:wght@500;600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply min-h-screen bg-black font-sans antialiased text-zinc-200;
+    background-color: #000;
+    background-image:
+      radial-gradient(circle at 10% -20%, rgba(0, 209, 141, 0.14), transparent 30%),
+      radial-gradient(circle at 90% 0%, rgba(255, 196, 77, 0.1), transparent 25%);
+    background-attachment: fixed;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-display tracking-tight text-zinc-100;
+  }
+
+  a {
+    @apply transition-colors;
+  }
+
+  ::selection {
+    background: rgba(0, 209, 141, 0.32);
+    color: #fff;
+  }
+
+  #root {
+    @apply min-h-screen;
+  }
+}
+
+@layer components {
+  .layout-container {
+    @apply mx-auto max-w-[1700px] px-4 sm:px-6 lg:px-8;
+  }
+
+  .app-panel {
+    @apply rounded-3xl border border-white/10 bg-zinc-950/80 shadow-panel backdrop-blur-sm;
+  }
+
+  .app-chip {
+    @apply inline-flex items-center gap-2 rounded-full border border-white/10 bg-zinc-900/80 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] text-zinc-300;
+  }
+
+  .section-title {
+    @apply font-display text-3xl font-bold tracking-tight text-zinc-100 sm:text-4xl;
+  }
+
+  .section-copy {
+    @apply text-sm leading-6 text-zinc-400 sm:text-base;
+  }
+
+  .surface-card {
+    @apply rounded-3xl border border-white/10 bg-zinc-950/75 shadow-soft backdrop-blur-sm;
+  }
+
+  .signal-dot {
+    @apply inline-block h-2.5 w-2.5 rounded-full bg-brand-400;
+  }
+
+  .command-input {
+    @apply w-full rounded-2xl border border-white/10 bg-zinc-950 px-4 py-3 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-brand-300 focus:outline-none;
+  }
+}
+
+.snippet-editor textarea {
+  outline: none;
+}
+
+.snippet-window {
+  --snippet-bg: #2b2f42;
+  --snippet-header-bg: #3a3f53;
+  --snippet-divider: rgba(255, 255, 255, 0.08);
+  --snippet-content-padding: 1rem;
+  --snippet-line-height: 1.85rem;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 1rem;
+  background: var(--snippet-bg);
+}
+
+.snippet-window__chrome {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.72rem 0.9rem;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.04), transparent), var(--snippet-header-bg);
+  border-bottom: 1px solid var(--snippet-divider);
+}
+
+.snippet-window__dot {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 999px;
+  display: inline-block;
+}
+
+.snippet-window__dot--red {
+  background: #ff5f57;
+}
+
+.snippet-window__dot--yellow {
+  background: #febc2e;
+}
+
+.snippet-window__dot--green {
+  background: #28c840;
+}
+
+.snippet-window__scroll {
+  position: relative;
+  overflow: auto;
+}
+
+.snippet-window__range {
+  position: absolute;
+  left: 0;
+  right: 0;
+  background: rgba(39, 92, 66, 0.42);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.snippet-window__active-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: var(--snippet-line-height);
+  background: rgba(55, 132, 82, 0.38);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.snippet-window__content {
+  position: relative;
+  z-index: 3;
+  display: grid;
+  grid-template-columns: 3.25rem minmax(0, 1fr);
+  align-items: start;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.95rem;
+  line-height: var(--snippet-line-height);
+  color: #e4e4e7;
+}
+
+.snippet-window__lines {
+  margin: 0;
+  padding: var(--snippet-content-padding) 0;
+  list-style: none;
+  border-right: 1px solid var(--snippet-divider);
+  background: rgba(15, 23, 42, 0.24);
+}
+
+.snippet-window__lines li {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  height: var(--snippet-line-height);
+  padding-right: 0.65rem;
+  color: #98a2b6;
+  font-size: 0.9rem;
+  user-select: none;
+}
+
+.snippet-window__lines li.is-highlighted {
+  background: rgba(40, 95, 67, 0.35);
+  color: #d4ecd8;
+}
+
+.snippet-window__lines li.is-active {
+  background: rgba(61, 139, 91, 0.35);
+  color: #ecfdf3;
+}
+
+.snippet-window__pre {
+  margin: 0;
+  min-width: max-content;
+  padding: var(--snippet-content-padding);
+  color: #e5e7eb;
+  background: transparent;
+}
+
+.snippet-window__pre code {
+  display: block;
+  white-space: pre;
+  word-break: normal;
+}
+
+.snippet-window--editor .snippet-window__chrome {
+  border-bottom: 1px solid var(--snippet-divider);
+}
+
+.snippet-window__editor-shell {
+  display: grid;
+  grid-template-columns: 3.25rem minmax(0, 1fr);
+  align-items: start;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.95rem;
+  line-height: var(--snippet-line-height);
+}
+
+.snippet-window__line-track {
+  max-height: 400px;
+  overflow: hidden;
+  border-right: 1px solid var(--snippet-divider);
+  background: rgba(15, 23, 42, 0.24);
+}
+
+.snippet-window__editor-shell .snippet-window__lines {
+  max-height: 400px;
+  border-right: 0;
+  background: transparent;
+  transition: transform 0.02s linear;
+}
+
+.snippet-window__editor-textarea {
+  min-height: 400px;
+  width: 100%;
+  border: 0;
+  resize: vertical;
+  background: transparent;
+  padding: var(--snippet-content-padding);
+  color: #e4e4e7;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+/* Custom scrollbar for snippet areas */
+.snippet-window__editor-textarea::-webkit-scrollbar,
+.snippet-window__scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.snippet-window__editor-textarea::-webkit-scrollbar-track,
+.snippet-window__scroll::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.4);
+  border-radius: 4px;
+}
+
+.snippet-window__editor-textarea::-webkit-scrollbar-thumb,
+.snippet-window__scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+}
+
+.snippet-window__editor-textarea::-webkit-scrollbar-thumb:hover,
+.snippet-window__scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.snippet-window__editor-textarea::placeholder {
+  color: #97a0b5;
+}
+
+.snippet-window__editor-textarea:focus {
+  outline: none;
+}
+
+.snippet-window__empty {
+  color: #9ca3af;
+}
+
+.snippet-editor .hljs {
+  background: transparent;
+  color: #e4e4e7;
+  padding: 0;
+}
+
+
