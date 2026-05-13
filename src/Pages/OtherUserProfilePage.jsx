@@ -79,18 +79,32 @@ export default function OtherUserProfilePage() {
         <Card className="p-5">
           <p className="app-chip">Recent posts</p>
           <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-            {posts.map((post, index) => (
-              <div key={post._id || index} className="overflow-hidden rounded-2xl border border-white/10 bg-black">
-                <img src={post.image || "https://picsum.photos/400/240"} alt="Post" className="h-40 w-full object-cover" />
-                <div className="space-y-2 p-4">
-                  <h3 className="line-clamp-1 font-display text-2xl text-zinc-100">{post.title || `Post ${index + 1}`}</h3>
-                  <p className="line-clamp-2 text-sm text-zinc-400">A peek into this creator's work and ideas.</p>
-                  <button className="text-xs font-semibold uppercase tracking-[0.12em] text-brand-200" onClick={() => navigate(`/post/${post._id}`)}>
-                    Read post
-                  </button>
-                </div>
-              </div>
-            ))}
+            {posts.length === 0 ? (
+              <p className="col-span-full rounded-2xl border border-dashed border-white/10 bg-black/40 px-4 py-6 text-center text-sm text-zinc-500">
+                No posts published yet.
+              </p>
+            ) : (
+              posts.map((post, index) => {
+                const hasImage =
+                  typeof post.image === "string" &&
+                  post.image.trim().length > 0;
+
+                return (
+                  <div key={post._id || index} className="overflow-hidden rounded-2xl border border-white/10 bg-black/80 transition-colors duration-200 hover:border-white/20">
+                    {hasImage && (
+                      <img src={post.image} alt="Post" className="h-40 w-full object-cover" loading="lazy" />
+                    )}
+                    <div className="space-y-2 p-4">
+                      <h3 className="line-clamp-2 font-display text-2xl text-zinc-100">{post.title || `Post ${index + 1}`}</h3>
+                      <p className="line-clamp-3 text-sm text-zinc-400">A peek into this creator's work and ideas.</p>
+                      <button className="text-xs font-semibold uppercase tracking-[0.12em] text-brand-200 transition-colors hover:text-brand-100" onClick={() => navigate(`/post/${post._id}`)}>
+                        Read post
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </Card>
       </div>

@@ -17,7 +17,6 @@ export default function DashboardPage() {
   const [posts, setPosts] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-const [iscoded, setIscoded] = useState(false);
   const [postForm, setPostForm] = useState({
     title: "",
     content: "",
@@ -153,70 +152,109 @@ const [iscoded, setIscoded] = useState(false);
         </form>
       </Modal>
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+      <div className="space-y-4">
         {loading ? (
-          <p className="col-span-full py-10 text-center text-zinc-500">Loading posts...</p>
+          <p className="py-10 text-center text-zinc-500">Loading posts...</p>
         ) : posts.length === 0 ? (
-          <p className="col-span-full py-10 text-center text-zinc-500">No posts available.</p>
+          <p className="py-10 text-center text-zinc-500">No posts available.</p>
         ) : (
-          posts.map((post) => (
-            <Card key={post._id} hoverable className="space-y-4">
-              <div className="flex items-center justify-between gap-3">
-                <Link to={`/user/${post.author?.username || "demo_user"}`} className="flex items-center gap-3">
-                  <Avatar src={post.author?.profilePic} fallback={post.author?.name || "U"} size="md" />
-                  <div>
-                    <p className="text-sm font-semibold text-zinc-100">{post.author?.name || "User"}</p>
-                    <p className="text-xs text-zinc-500">{new Date().toLocaleDateString()}</p>
+          <div className="columns-1 gap-4 md:columns-2">
+            {posts.map((post) => {
+            const categoryLabel =
+              typeof post.category === "string"
+                ? post.category.trim()
+                : "";
+            const hasImage =
+              typeof post.image === "string" &&
+              post.image.trim().length > 0;
+            const postCode =
+              typeof post.code === "string"
+                ? post.code.trim()
+                : "";
+            const hasCode = postCode.length > 0;
+            const contentPreview =
+              typeof post.content === "string"
+                ? post.content.trim()
+                : "";
+            const isCompact = !hasImage && !hasCode;
+
+            return (
+              <article key={post._id} className="mb-4 break-inside-avoid">
+                <Card
+                  hoverable
+                  className={`h-fit p-4 sm:p-5 ${isCompact ? "space-y-2.5" : "space-y-3.5"}`}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <Link to={`/user/${post.author?.username || "demo_user"}`} className="flex min-w-0 items-center gap-3">
+                      <Avatar src={post.author?.profilePic} fallback={post.author?.name || "U"} size="md" />
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-zinc-100">{post.author?.name || "User"}</p>
+                        <p className="text-xs text-zinc-500">{new Date().toLocaleDateString()}</p>
+                      </div>
+                    </Link>
+                    {categoryLabel && (
+                      <span className="rounded-full border border-white/10 bg-black px-3 py-1 text-xs text-zinc-400">
+                        {categoryLabel}
+                      </span>
+                    )}
                   </div>
-                </Link>
-                <span className="rounded-full border border-white/10 bg-black px-3 py-1 text-xs text-zinc-400">{post.category || "Article"}</span>
-              </div>
 
-              {post.image && (
-                <Link to={`/post/${post._id}`} className="block overflow-hidden rounded-2xl border border-white/10">
-                  <img src={post.image} alt="post" className="h-52 w-full object-cover" />
-                </Link>
-              )}
+                  {hasImage && (
+                    <Link to={`/post/${post._id}`} className="block overflow-hidden rounded-2xl border border-white/10">
+                      <img src={post.image} alt="post" className="h-44 w-full object-cover transition-transform duration-500 hover:scale-[1.02] sm:h-52" loading="lazy" />
+                    </Link>
+                  )}
 
-              <div>
-                <h3 className="font-display text-3xl text-zinc-100">
-                  <Link to={`/post/${post._id}`} className="hover:text-brand-200">{post.title}</Link>
-                </h3>{post.code!="" &&    
-                <Editor
-                  height="200px"
-                  defaultLanguage={post.language || "python"}
-                  theme="vs-dark"
-                  defaultValue={post.code}
-                  options={{
-                    fontSize: 14,
-                    minimap: {
-                      enabled: false,
-                    },
-                    scrollBeyondLastLine: false,
-                    wordWrap: "on",
-                    lineNumbersMinChars: 3,
-                    glyphMargin: false,
-                    folding: false,
-                    lineDecorationsWidth: 10,
-                    readOnly: true,
-                    renderLineHighlight: "none",
-                  }}
-                />
-                }
+                  <div className="space-y-1.5">
+                    <h3 className="font-display text-2xl leading-tight text-zinc-100 sm:text-3xl">
+                      <Link to={`/post/${post._id}`} className="transition-colors hover:text-brand-200">{post.title}</Link>
+                    </h3>
 
-             
-                <p className="mt-2 line-clamp-3 text-sm text-zinc-400">{post.content}</p>
-              </div>
+                    {hasCode && (
+                      <div className="overflow-hidden rounded-xl border border-white/10">
+                        <Editor
+                          height="180px"
+                          defaultLanguage={post.language || "python"}
+                          theme="vs-dark"
+                          defaultValue={postCode}
+                          options={{
+                            fontSize: 14,
+                            minimap: {
+                              enabled: false,
+                            },
+                            scrollBeyondLastLine: false,
+                            wordWrap: "on",
+                            lineNumbersMinChars: 3,
+                            glyphMargin: false,
+                            folding: false,
+                            lineDecorationsWidth: 10,
+                            readOnly: true,
+                            renderLineHighlight: "none",
+                            automaticLayout: true,
+                          }}
+                        />
+                      </div>
+                    )}
 
-              <div className="flex items-center gap-3 border-t border-white/10 pt-3 text-xs text-zinc-400">
-                <button onClick={() => handleLike(post._id)} className="rounded-xl border border-white/10 bg-black px-3 py-1 hover:border-red-400/40 hover:text-red-200">
-                  {post.likes?.length || 0} likes
-                </button>
-                <span>{post.comments?.length || 0} comments</span>
-                <span className="ml-auto">{post.views?.length || 0} views</span>
-              </div>
-            </Card>
-          ))
+                    {contentPreview && (
+                      <p className={`text-sm text-zinc-400 ${isCompact ? "line-clamp-2" : "line-clamp-3"}`}>
+                        {contentPreview}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="mt-1 flex items-center gap-2.5 border-t border-white/10 pt-2.5 text-xs text-zinc-400">
+                    <button onClick={() => handleLike(post._id)} className="rounded-xl border border-white/10 bg-black px-2.5 py-1 transition-all duration-200 hover:border-red-400/40 hover:text-red-200 active:scale-[0.98]">
+                      {post.likes?.length || 0} likes
+                    </button>
+                    <span>{post.comments?.length || 0} comments</span>
+                    <span className="ml-auto">{post.views?.length || 0} views</span>
+                  </div>
+                </Card>
+              </article>
+            );
+          })}
+          </div>
         )}
       </div>
     </div>

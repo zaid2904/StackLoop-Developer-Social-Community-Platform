@@ -17,8 +17,8 @@
     @apply min-h-screen bg-black font-sans antialiased text-zinc-200;
     background-color: #000;
     background-image:
-      radial-gradient(circle at 10% -20%, rgba(0, 209, 141, 0.14), transparent 30%),
-      radial-gradient(circle at 90% 0%, rgba(255, 196, 77, 0.1), transparent 25%);
+      radial-gradient(circle at 10% -20%, rgba(239, 68, 68, 0.2), transparent 32%),
+      radial-gradient(circle at 90% 0%, rgba(127, 29, 29, 0.22), transparent 30%);
     background-attachment: fixed;
   }
 
@@ -35,8 +35,20 @@
     @apply transition-colors;
   }
 
+  button {
+    @apply transition-colors;
+  }
+
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    @apply outline-none ring-2 ring-brand-300/45 ring-offset-2 ring-offset-black;
+  }
+
   ::selection {
-    background: rgba(0, 209, 141, 0.32);
+    background: rgba(239, 68, 68, 0.32);
     color: #fff;
   }
 
@@ -75,7 +87,18 @@
   }
 
   .command-input {
-    @apply w-full rounded-2xl border border-white/10 bg-zinc-950 px-4 py-3 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-brand-300 focus:outline-none;
+    @apply w-full rounded-2xl border border-white/10 bg-zinc-950 px-4 py-3 text-sm text-zinc-200 placeholder:text-zinc-600 transition-[border-color,box-shadow] duration-200 focus:border-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-300/20;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
@@ -90,6 +113,8 @@
   --snippet-content-padding: 1rem;
   --snippet-line-height: 1.85rem;
   position: relative;
+  width: 100%;
+  min-width: 0;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.09);
   border-radius: 1rem;
@@ -121,19 +146,21 @@
 }
 
 .snippet-window__dot--green {
-  background: #28c840;
+  background: #ef4444;
 }
 
 .snippet-window__scroll {
   position: relative;
   overflow: auto;
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
 }
 
 .snippet-window__range {
   position: absolute;
   left: 0;
   right: 0;
-  background: rgba(39, 92, 66, 0.42);
+  background: rgba(127, 29, 29, 0.4);
   pointer-events: none;
   z-index: 1;
 }
@@ -143,7 +170,7 @@
   left: 0;
   right: 0;
   height: var(--snippet-line-height);
-  background: rgba(55, 132, 82, 0.38);
+  background: rgba(220, 38, 38, 0.2);
   pointer-events: none;
   z-index: 2;
 }
@@ -153,6 +180,8 @@
   z-index: 3;
   display: grid;
   grid-template-columns: 3.25rem minmax(0, 1fr);
+  width: max-content;
+  min-width: 100%;
   align-items: start;
   font-family: "IBM Plex Mono", monospace;
   font-size: 0.95rem;
@@ -180,13 +209,13 @@
 }
 
 .snippet-window__lines li.is-highlighted {
-  background: rgba(40, 95, 67, 0.35);
-  color: #d4ecd8;
+  background: rgba(185, 28, 28, 0.3);
+  color: #ffe4e6;
 }
 
 .snippet-window__lines li.is-active {
-  background: rgba(61, 139, 91, 0.35);
-  color: #ecfdf3;
+  background: rgba(239, 68, 68, 0.34);
+  color: #fff1f2;
 }
 
 .snippet-window__pre {
@@ -284,5 +313,3 @@
   color: #e4e4e7;
   padding: 0;
 }
-
-

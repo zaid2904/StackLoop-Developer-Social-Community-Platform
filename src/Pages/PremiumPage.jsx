@@ -89,35 +89,60 @@ export default function PremiumPage() {
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {posts.map((post) => (
-            <Card key={post._id} hoverable className="flex h-full flex-col overflow-hidden p-0">
-              <div className="relative h-48 overflow-hidden border-b border-white/10">
-                {post.image ? <img src={post.image} alt={post.title} className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center bg-black text-zinc-500">No image</div>}
-                <span className="absolute left-3 top-3 rounded-full bg-brand-300 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-black">Premium</span>
-              </div>
+          {posts.map((post) => {
+            const hasImage =
+              typeof post.image === "string" &&
+              post.image.trim().length > 0;
+            const categoryLabel =
+              typeof post.category === "string"
+                ? post.category.trim()
+                : "";
 
-              <div className="flex flex-1 flex-col space-y-3 p-4">
-                <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">{post.category || "Expert"}</p>
-                <h3 className="line-clamp-2 font-display text-3xl text-zinc-100">
-                  <Link to={`/post/${post._id}`} className="hover:text-brand-200">{post.title}</Link>
-                </h3>
-                <p className="line-clamp-3 text-sm text-zinc-400">{post.content}</p>
+            return (
+              <Card key={post._id} hoverable className="flex h-full flex-col overflow-hidden p-0">
+                {hasImage && (
+                  <div className="relative h-48 overflow-hidden border-b border-white/10">
+                    <img src={post.image} alt={post.title} className="h-full w-full object-cover transition-transform duration-500 hover:scale-[1.02]" loading="lazy" />
+                    <span className="absolute left-3 top-3 rounded-full bg-brand-500 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white">Premium</span>
+                  </div>
+                )}
 
-                <div className="mt-auto flex items-center justify-between border-t border-white/10 pt-3">
-                  <Link to={`/user/${post.author?.username || "demo"}`} className="flex items-center gap-2">
-                    <Avatar src={post.author?.profilePic} fallback={post.author?.name || "E"} size="xs" />
-                    <span className="text-xs text-zinc-300">{post.author?.name || "Expert"}</span>
-                  </Link>
-                  <button
-                    onClick={() => handleLike(post._id)}
-                    className={`rounded-xl border px-2 py-1 text-xs ${post.likes?.includes(userId) ? "border-red-400/40 text-red-200" : "border-white/10 text-zinc-400 hover:border-white/20 hover:text-zinc-200"}`}
-                  >
-                    {post.likes?.length || 0} likes
-                  </button>
+                <div className="flex flex-1 flex-col space-y-3 p-4">
+                  {!hasImage && (
+                    <span className="w-fit rounded-full bg-brand-500 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white">
+                      Premium
+                    </span>
+                  )}
+
+                  {categoryLabel && (
+                    <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">
+                      {categoryLabel}
+                    </p>
+                  )}
+
+                  <h3 className="line-clamp-2 font-display text-3xl text-zinc-100">
+                    <Link to={`/post/${post._id}`} className="transition-colors hover:text-brand-200">
+                      {post.title}
+                    </Link>
+                  </h3>
+                  <p className="line-clamp-3 text-sm text-zinc-400">{post.content}</p>
+
+                  <div className="mt-auto flex items-center justify-between border-t border-white/10 pt-3">
+                    <Link to={`/user/${post.author?.username || "demo"}`} className="flex min-w-0 items-center gap-2">
+                      <Avatar src={post.author?.profilePic} fallback={post.author?.name || "E"} size="xs" />
+                      <span className="truncate text-xs text-zinc-300">{post.author?.name || "Expert"}</span>
+                    </Link>
+                    <button
+                      onClick={() => handleLike(post._id)}
+                      className={`rounded-xl border px-2 py-1 text-xs transition-all duration-200 active:scale-[0.98] ${post.likes?.includes(userId) ? "border-red-400/40 bg-red-500/10 text-red-200" : "border-white/10 text-zinc-400 hover:border-white/20 hover:text-zinc-200"}`}
+                    >
+                      {post.likes?.length || 0} likes
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </Card>
-          ))}
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>

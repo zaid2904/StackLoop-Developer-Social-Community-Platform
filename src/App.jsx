@@ -1,7 +1,9 @@
-﻿import { useDispatch, useSelector } from "react-redux";
-import { BrowserRouter as Router, Link, NavLink, Route, Routes, useLocation } from "react-router-dom";
+﻿import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { Link, NavLink, Route, BrowserRouter as Router, Routes, useLocation } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { logout } from "./features/auth/authSlice";
+import CodeEditor from "./Pages/CodeEditor";
 import CreatePostPage from "./Pages/CreatePostPage";
 import DashboardPage from "./Pages/DashboardPage";
 import HomePage from "./Pages/HomePage";
@@ -11,11 +13,8 @@ import PremiumPage from "./Pages/PremiumPage";
 import ProfilePage from "./Pages/ProfilePage";
 import RegisterPage from "./Pages/RegisterPage";
 import SinglePostPage from "./Pages/SinglePostPage";
-import { buyrazorpay } from "./services/paymentService";
-import CodeEditor from "./Pages/CodeEditor";
-import { useState,useEffect } from "react";
 import axios from "./services/api";
-import { Editor } from "@monaco-editor/react";
+import { buyrazorpay } from "./services/paymentService";
 
 const TAGS = ["Web", "Devtools", "Product", "Design", "API", "UX", "AI", "Frontend", "Backend"];
 function AppIcon({ type, className = "h-4 w-4" }) {
@@ -138,7 +137,7 @@ console.log(response.data);
                 to={item.to}
                 end={item.end}
                 className={({ isActive }) =>
-                  `inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-colors ${isActive ? "bg-brand-400 text-black" : "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100"
+                  `inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-all duration-200 ${isActive ? "bg-brand-500 text-white shadow-[0_0_0_1px_rgba(239,68,68,0.25)]" : "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100"
                   }`
                 }
               >
@@ -158,19 +157,19 @@ console.log(response.data);
           <div className="flex items-center gap-2">
             {token ? (
               <>
-                <Link to="/create-post" className="hidden rounded-xl border border-white/10 bg-zinc-950 px-3 py-2 text-sm font-semibold text-zinc-200 hover:border-white/20 sm:inline-flex">
+                <Link to="/create-post" className="hidden rounded-xl border border-white/10 bg-zinc-950 px-3 py-2 text-sm font-semibold text-zinc-200 transition-all duration-200 hover:-translate-y-px hover:border-white/20 sm:inline-flex">
                   <AppIcon type="plus" className="mr-1 h-4 w-4" />
                   New
                 </Link>
                 <button
                   onClick={buyrazorpay}
-                  className="hidden rounded-xl border border-brand-300/25 bg-brand-300/10 px-3 py-2 text-sm font-semibold text-brand-200 hover:bg-brand-300/20 lg:inline-flex"
+                  className="hidden rounded-xl border border-brand-300/25 bg-brand-300/10 px-3 py-2 text-sm font-semibold text-brand-200 transition-all duration-200 hover:-translate-y-px hover:bg-brand-300/20 lg:inline-flex"
                 >
                   Upgrade
                 </button>
                 <NavLink
                   to="/profile"
-                  className="rounded-xl border border-white/10 bg-zinc-900 px-3 py-2 text-sm font-bold uppercase tracking-wide text-zinc-100 hover:border-white/20"
+                  className="rounded-xl border border-white/10 bg-zinc-900 px-3 py-2 text-sm font-bold uppercase tracking-wide text-zinc-100 transition-all duration-200 hover:-translate-y-px hover:border-white/20"
                 >
                   {(user?.username || user?.name || "U").slice(0, 2)}
                 </NavLink>
@@ -179,17 +178,17 @@ console.log(response.data);
                     dispatch(logout());
                     localStorage.clear();
                   }}
-                  className="rounded-xl border border-white/10 px-3 py-2 text-sm text-zinc-400 hover:border-red-400/30 hover:text-red-200"
+                  className="rounded-xl border border-white/10 px-3 py-2 text-sm text-zinc-400 transition-all duration-200 hover:border-red-400/30 hover:text-red-200"
                 >
                   Logout
                 </button>
               </>
             ) : (
               <>
-                <NavLink to="/login" className="rounded-xl border border-white/10 px-3 py-2 text-sm font-semibold text-zinc-300 hover:border-white/20 hover:text-zinc-100">
+                <NavLink to="/login" className="rounded-xl border border-white/10 px-3 py-2 text-sm font-semibold text-zinc-300 transition-all duration-200 hover:border-white/20 hover:text-zinc-100">
                   Sign in
                 </NavLink>
-                <NavLink to="/register" className="rounded-xl bg-brand-400 px-3 py-2 text-sm font-semibold text-black hover:bg-brand-300">
+                <NavLink to="/register" className="rounded-xl bg-brand-500 px-3 py-2 text-sm font-semibold text-white transition-all duration-200 hover:bg-brand-400 active:scale-[0.98]">
                   Join
                 </NavLink>
               </>
@@ -271,7 +270,7 @@ useEffect(()=>{
           <p className="mb-3 text-xs uppercase tracking-[0.22em] text-zinc-500">Trending Tags</p>
           <div className="flex flex-wrap gap-2">
             {TAGS.map((tag) => (
-              <button key={tag} className="rounded-full border border-white/10 bg-black px-3 py-1 text-xs text-zinc-400 hover:border-brand-300/35 hover:text-brand-200">
+              <button key={tag} className="rounded-full border border-white/10 bg-black px-3 py-1 text-xs text-zinc-400 transition-all duration-200 hover:-translate-y-px hover:border-brand-300/35 hover:text-brand-200">
                 #{tag}
               </button>
             ))}
@@ -280,25 +279,42 @@ useEffect(()=>{
 
         <div className="surface-card p-4">
           <p className="mb-3 text-xs uppercase tracking-[0.22em] text-zinc-500">New Creators</p>
-          <div className="space-y-2">
-            {user.map((name) => (
-              <div key={name._id} className="flex items-center justify-between rounded-xl border border-white/10 bg-black/90 px-3 py-2">
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 bg-zinc-900 text-xs font-semibold text-zinc-200">
-                    {name.name|| "U"}
-                  </span>
-                  <span className="text-sm text-zinc-300">{name.name || "Unknown User"}</span>
-                </div>
-                <button
-                  type="button"
-                  className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-white/10 bg-zinc-900 text-xs text-zinc-500 transition-colors hover:border-brand-300/35 hover:text-brand-200"
-                  aria-label={`Follow ${name.name || "user"}`}
-                >
-                  +
-                </button>
-              </div>
-            ))}
-          </div>
+          {user.length === 0 ? (
+            <p className="rounded-xl border border-dashed border-white/10 bg-black/70 px-3 py-2 text-sm text-zinc-500">
+              No new creators yet.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {user.map((creator) => {
+                const displayName =
+                  (creator.username || creator.name || "").trim() ||
+                  "Unknown User";
+                const initials = displayName.slice(0, 1).toUpperCase();
+
+                return (
+                  <div key={creator._id} className="flex items-start gap-2 rounded-xl border border-white/10 bg-black/90 px-3 py-2.5 transition-colors duration-200 hover:border-white/20">
+                    <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-zinc-900 text-xs font-semibold text-zinc-200">
+                      {initials}
+                    </span>
+
+                    <div className="min-w-0 flex-1">
+                      <p className="break-all text-sm font-medium leading-snug text-zinc-200">
+                        {displayName}
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-white/10 bg-zinc-900 text-xs text-zinc-500 transition-all duration-200 hover:border-brand-300/35 hover:text-brand-200 active:scale-[0.96]"
+                      aria-label={`Follow ${displayName}`}
+                    >
+                      +
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     </aside>
@@ -317,7 +333,7 @@ function AppLayout() {
     return (
       <div className="min-h-screen bg-black text-zinc-100">
         <main className="relative mx-auto flex min-h-screen w-full max-w-6xl items-center justify-center px-4 py-12">
-          <div className="pointer-events-none absolute inset-0 -z-10 opacity-40 [background:radial-gradient(circle_at_15%_20%,rgba(0,209,141,0.15),transparent_25%),radial-gradient(circle_at_85%_10%,rgba(255,196,77,0.15),transparent_22%)]" />
+          <div className="pointer-events-none absolute inset-0 -z-10 opacity-40 [background:radial-gradient(circle_at_15%_20%,rgba(239,68,68,0.22),transparent_28%),radial-gradient(circle_at_85%_10%,rgba(127,29,29,0.24),transparent_30%)]" />
           <MainRoutes search={search} setSearch={setsearch}  searchpost={searchpost} setSearchpost={setSearchpost} />
         </main>
       </div>

@@ -471,7 +471,7 @@ setFormData((prev) => ({
                     <div className="flex items-center gap-2">
                       <div className="h-3 w-3 rounded-full bg-red-400"></div>
                       <div className="h-3 w-3 rounded-full bg-yellow-400"></div>
-                      <div className="h-3 w-3 rounded-full bg-green-400"></div>
+                      <div className="h-3 w-3 rounded-full bg-red-500"></div>
                     </div>
 
                     <p className="text-xs uppercase tracking-[0.12em] text-zinc-300">
@@ -548,7 +548,7 @@ setFormData((prev) => ({
                 className="w-full sm:w-auto"
               >
                 Save Draft
-              </Button>in this 
+              </Button>
 
               <Button
                 type="submit"

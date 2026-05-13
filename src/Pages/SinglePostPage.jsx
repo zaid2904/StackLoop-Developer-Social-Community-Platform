@@ -14,42 +14,233 @@ const SEED_COMMENTS = [
   { id: "s3", author: "Aisha Yusuf", profilePic: "https://i.pravatar.cc/150?u=aisha", text: "The repeatable process takeaway is spot on.", date: new Date(Date.now() - 3600000 * 28).toISOString(), likes: 5 },
 ];
 
+const LIST_ITEM_REGEX = /^(\s*)([-*+]|(\d+)\.)\s+(.*)$/;
+const HEADING_REGEX = /^(#{1,6})\s+(.*)$/;
+const BLOCKQUOTE_REGEX = /^>\s?(.*)$/;
+const HORIZONTAL_RULE_REGEX = /^(-{3,}|\*{3,}|_{3,})$/;
+const CODE_FENCE_REGEX = /^```([\w-+]*)\s*$/;
+
+function escapeHtml(value = "") {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function renderInlineMarkdown(text = "") {
+  const escaped = escapeHtml(text);
+
+  return escaped
+    .replace(/`([^`]+)`/g, '<code class="rounded-md border border-white/10 bg-black/80 px-1.5 py-0.5 font-mono text-[0.9em] text-brand-100">$1</code>')
+    .replace(/\*\*([\s\S]+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/\*([^*]+)\*/g, "<em>$1</em>")
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer" class="text-brand-200 underline decoration-brand-300/40 underline-offset-4 hover:text-brand-100">$1</a>');
+}
+
+function parseMarkdownBlocks(content = "") {
+  const normalized = content.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  const lines = normalized.split("\n");
+  const blocks = [];
+
+  const pushParagraph = (paragraphLines) => {
+    const value = paragraphLines.join(" ").replace(/\s+/g, " ").trim();
+
+    if (value) {
+      blocks.push({ type: "paragraph", value });
+    }
+  };
+
+  const isBlockBoundary = (line) => {
+    const trimmed = line.trim();
+    return (
+      !trimmed ||
+      trimmed.startsWith("```") ||
+      HEADING_REGEX.test(trimmed) ||
+      BLOCKQUOTE_REGEX.test(trimmed) ||
+      HORIZONTAL_RULE_REGEX.test(trimmed) ||
+      LIST_ITEM_REGEX.test(trimmed)
+    );
+  };
+
+  let index = 0;
+
+  while (index < lines.length) {
+    const line = lines[index];
+    const trimmed = line.trim();
+
+    if (!trimmed) {
+      index += 1;
+      continue;
+    }
+
+    const fenceMatch = trimmed.match(CODE_FENCE_REGEX);
+    if (fenceMatch) {
+      const codeLines = [];
+      const language = fenceMatch[1] || "";
+      index += 1;
+
+      while (index < lines.length && !lines[index].trim().startsWith("```")) {
+        codeLines.push(lines[index]);
+        index += 1;
+      }
+
+      if (index < lines.length) {
+        index += 1;
+      }
+
+      blocks.push({ type: "code", value: codeLines.join("\n").trimEnd(), language });
+      continue;
+    }
+
+    const headingMatch = trimmed.match(HEADING_REGEX);
+    if (headingMatch) {
+      blocks.push({ type: "heading", level: headingMatch[1].length, value: headingMatch[2].trim() });
+      index += 1;
+      continue;
+    }
+
+    if (HORIZONTAL_RULE_REGEX.test(trimmed)) {
+      blocks.push({ type: "divider" });
+      index += 1;
+      continue;
+    }
+
+    const quoteMatch = trimmed.match(BLOCKQUOTE_REGEX);
+    if (quoteMatch) {
+      const quoteLines = [quoteMatch[1].trim()];
+      index += 1;
+
+      while (index < lines.length) {
+        const nextLine = lines[index].trim();
+        const nextQuoteMatch = nextLine.match(BLOCKQUOTE_REGEX);
+
+        if (!nextQuoteMatch) {
+          break;
+        }
+
+        quoteLines.push(nextQuoteMatch[1].trim());
+        index += 1;
+      }
+
+      blocks.push({ type: "blockquote", value: quoteLines.join(" ").replace(/\s+/g, " ").trim() });
+      continue;
+    }
+
+    const listMatch = trimmed.match(LIST_ITEM_REGEX);
+    if (listMatch) {
+      const ordered = Boolean(listMatch[3]);
+      const items = [];
+
+      while (index < lines.length) {
+        const currentMatch = lines[index].trim().match(LIST_ITEM_REGEX);
+
+        if (!currentMatch || Boolean(currentMatch[3]) !== ordered) {
+          break;
+        }
+
+        items.push(currentMatch[4].trim());
+        index += 1;
+      }
+
+      blocks.push({ type: "list", ordered, items });
+      continue;
+    }
+
+    const paragraphLines = [trimmed];
+    index += 1;
+
+    while (index < lines.length && !isBlockBoundary(lines[index])) {
+      paragraphLines.push(lines[index].trim());
+      index += 1;
+    }
+
+    pushParagraph(paragraphLines);
+  }
+
+  return blocks;
+}
+
+function renderMarkdownBlock(block, index) {
+  if (block.type === "heading") {
+    const headingLevel = Math.min(Math.max(block.level, 1), 6);
+    const HeadingTag = `h${headingLevel}`;
+    const headingClasses = {
+      1: "text-3xl font-display font-semibold leading-tight text-zinc-100 sm:text-4xl",
+      2: "text-2xl font-display font-semibold leading-tight text-zinc-100 sm:text-3xl",
+      3: "text-xl font-display font-semibold leading-tight text-zinc-100 sm:text-2xl",
+      4: "text-lg font-display font-semibold leading-tight text-zinc-100",
+      5: "text-base font-display font-semibold leading-tight text-zinc-100",
+      6: "text-sm font-display font-semibold uppercase tracking-[0.14em] text-zinc-100",
+    };
+
+    return (
+      <HeadingTag
+        key={`heading-${index}`}
+        className={headingClasses[headingLevel]}
+        dangerouslySetInnerHTML={{ __html: renderInlineMarkdown(block.value) }}
+      />
+    );
+  }
+
+  if (block.type === "divider") {
+    return <div key={`divider-${index}`} className="h-px w-full bg-white/10" />;
+  }
+
+  if (block.type === "blockquote") {
+    return (
+      <blockquote
+        key={`blockquote-${index}`}
+        className="border-l-2 border-brand-300/40 pl-4 text-zinc-300"
+        dangerouslySetInnerHTML={{ __html: renderInlineMarkdown(block.value) }}
+      />
+    );
+  }
+
+  if (block.type === "list") {
+    const ListTag = block.ordered ? "ol" : "ul";
+    const listClasses = block.ordered ? "list-decimal" : "list-disc";
+
+    return (
+      <ListTag key={`list-${index}`} className={`space-y-2 pl-5 ${listClasses}`}>
+        {block.items.map((item, itemIndex) => (
+          <li
+            key={`${index}-${itemIndex}`}
+            className="pl-1 leading-8 text-zinc-300"
+            dangerouslySetInnerHTML={{ __html: renderInlineMarkdown(item) }}
+          />
+        ))}
+      </ListTag>
+    );
+  }
+
+  if (block.type === "code") {
+    return (
+      <div key={`code-${index}`} className="space-y-2">
+        <div className="flex items-center justify-between px-1 text-xs uppercase tracking-[0.14em] text-zinc-500">
+          <span className="px-1">Snippet</span>
+        </div>
+        <CodeSnippetWindow code={block.value} maxHeight={360} />
+      </div>
+    );
+  }
+
+  return (
+    <p
+      key={`paragraph-${index}`}
+      className="leading-8 text-zinc-300"
+      dangerouslySetInnerHTML={{ __html: renderInlineMarkdown(block.value) }}
+    />
+  );
+}
+
 function timeAgo(dateString) {
   const diff = Math.floor((Date.now() - new Date(dateString)) / 1000);
   if (diff < 60) return `${diff}s ago`;
   if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
   if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
   return new Date(dateString).toLocaleDateString(undefined, { month: "short", day: "numeric" });
-}
-
-function splitContentBlocks(content = "") {
-  const blocks = [];
-  const fenceRegex = /```([\s\S]*?)```/g;
-  let lastIndex = 0;
-  let match;
-
-  while ((match = fenceRegex.exec(content)) !== null) {
-    if (match.index > lastIndex) {
-      const before = content.slice(lastIndex, match.index).trim();
-      if (before) {
-        before.split("\n").forEach((paragraph) => {
-          if (paragraph.trim()) blocks.push({ type: "paragraph", value: paragraph.trim() });
-        });
-      }
-    }
-
-    blocks.push({ type: "code", value: match[1].trim() });
-    lastIndex = match.index + match[0].length;
-  }
-
-  const tail = content.slice(lastIndex).trim();
-  if (tail) {
-    tail.split("\n").forEach((paragraph) => {
-      if (paragraph.trim()) blocks.push({ type: "paragraph", value: paragraph.trim() });
-    });
-  }
-
-  return blocks;
 }
 
 export default function SinglePostPage() {
@@ -66,7 +257,7 @@ export default function SinglePostPage() {
   const [comments, setComments] = useState([]);
   const [commentText, setCommentText] = useState("");
   const [commentLoading, setCommentLoading] = useState(false);
-  const [copiedCode, setCopiedCode] = useState(false);
+  const [copiedCodeId, setCopiedCodeId] = useState(null);
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -176,11 +367,11 @@ export default function SinglePostPage() {
     setToast({ message: "Link copied", type: "info" });
   };
 
-  const handleCopyCode = async (code) => {
+  const handleCopyCode = async (code, codeId) => {
     if (!navigator.clipboard) return;
     await navigator.clipboard.writeText(code);
-    setCopiedCode(true);
-    setTimeout(() => setCopiedCode(false), 1400);
+    setCopiedCodeId(codeId);
+    setTimeout(() => setCopiedCodeId((currentId) => (currentId === codeId ? null : currentId)), 1400);
   };
 
   if (loading) {
@@ -208,6 +399,11 @@ export default function SinglePostPage() {
       </div>
     );
   }
+
+  const markdownBlocks = parseMarkdownBlocks(post.content || "");
+  const hasEmbeddedCode = markdownBlocks.some((block) => block.type === "code");
+  const postCode = typeof post.code === "string" ? post.code.trim() : "";
+  const displayBlocks = postCode && !hasEmbeddedCode ? [...markdownBlocks, { type: "code", value: postCode }] : markdownBlocks;
 
   return (
     <>
@@ -250,19 +446,19 @@ export default function SinglePostPage() {
               </div>
 
               <div className="space-y-4 text-zinc-300">
-                {splitContentBlocks(post.content).map((block, index) =>
+                {displayBlocks.map((block, index) =>
                   block.type === "code" ? (
                     <div key={index} className="space-y-2">
                       <div className="flex items-center justify-between px-1 text-xs uppercase tracking-[0.14em] text-zinc-500">
                         <span className="px-1">Snippet</span>
-                        <button onClick={() => handleCopyCode(block.value)} className="rounded-lg border border-white/10 px-2 py-1 text-[10px] text-zinc-300 hover:border-white/20">
-                          {copiedCode ? "Copied" : "Copy"}
+                        <button onClick={() => handleCopyCode(block.value, `code-${index}`)} className="rounded-lg border border-white/10 px-2 py-1 text-[10px] text-zinc-300 hover:border-white/20">
+                          {copiedCodeId === `code-${index}` ? "Copied" : "Copy"}
                         </button>
                       </div>
                       <CodeSnippetWindow code={block.value} maxHeight={360} />
                     </div>
                   ) : (
-                    <p key={index} className="leading-8 text-zinc-300">{block.value}</p>
+                    renderMarkdownBlock(block, index)
                   )
                 )}
               </div>
@@ -283,7 +479,7 @@ export default function SinglePostPage() {
                     required
                   />
                   <div className="flex justify-end">
-                    <button disabled={commentLoading || !commentText.trim()} className="rounded-xl bg-brand-400 px-4 py-2 text-sm font-semibold text-black hover:bg-brand-300 disabled:opacity-60">
+                    <button disabled={commentLoading || !commentText.trim()} className="rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-400 disabled:opacity-60">
                       {commentLoading ? "Posting..." : "Post comment"}
                     </button>
                   </div>

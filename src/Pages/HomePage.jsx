@@ -90,16 +90,44 @@ function FeedCard({ post }) {
     post.author?._id ||
     "demo";
 
-  const mediaUrl =
-    post.image ||
-    post.mediaUrl ||
-    post.videoUrl ||
-    post.audioUrl ||
-    post.gifUrl;
+  const mediaUrl = [
+    post.image,
+    post.mediaUrl,
+    post.videoUrl,
+    post.audioUrl,
+    post.gifUrl,
+  ].find((value) => typeof value === "string" && value.trim()) || null;
 
-  const username =
+  const authorName =
+    (post.author?.name || post.author?.username || "").trim() ||
+    "Community member";
+
+  const username = (
+    post.author?.username ||
     post.author?.name ||
-    "user";
+    "user"
+  )
+    .toString()
+    .trim()
+    .replace(/\s+/g, "_")
+    .toLowerCase();
+
+  const tags = Array.from(
+    new Set(
+      (Array.isArray(post.tags)
+        ? post.tags
+        : [post.tags, post.tag, post.category]
+      )
+        .filter((tag) => typeof tag === "string")
+        .map((tag) => tag.trim())
+        .filter(Boolean)
+    )
+  );
+
+  const postExcerpt =
+    typeof post.content === "string"
+      ? post.content.trim()
+      : "";
 
 
   const handleLike = async (e) => {
@@ -135,29 +163,29 @@ function FeedCard({ post }) {
 
 
   return (
-    <div className="py-6 sm:py-8 first:pt-0 border-b border-white/[0.08] last:border-0">
+    <div className="border-b border-white/[0.08] py-6 transition-colors duration-200 first:pt-0 last:border-0 sm:py-8">
 
       <div className="flex items-start gap-4">
 
         <Link
           to={`/user/${authorId}`}
-          className="shrink-0 mt-0.5"
+          className="mt-0.5 shrink-0 transition-transform duration-200 hover:scale-[1.02]"
         >
 
           {post.author?.profilePic ? (
 
             <img
               src={post.author.profilePic}
-              alt={post.author?.name}
-              className="h-11 w-11 rounded-full object-cover border border-white/10"
+              alt={authorName}
+              className="h-11 w-11 rounded-full border border-white/10 object-cover"
             />
 
           ) : (
 
             <div className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-zinc-900 font-semibold text-zinc-100">
 
-              {post.author?.name
-                ? post.author.name.slice(0, 1).toUpperCase()
+              {authorName
+                ? authorName.slice(0, 1).toUpperCase()
                 : "?"}
 
             </div>
@@ -169,68 +197,73 @@ function FeedCard({ post }) {
 
         <div className="min-w-0 flex-1 space-y-3">
 
-          <div className="flex items-center gap-1.5 text-[15px] leading-tight">
+          <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 text-[15px] leading-tight">
 
             <Link
               to={`/user/${authorId}`}
-              className="font-bold text-zinc-100 hover:underline"
+              className="font-bold text-zinc-100 transition-colors hover:text-brand-100"
             >
-              {post.author?.name || "Community member"}
+              {authorName}
             </Link>
 
-            <span className="text-zinc-500">
+            <span className="max-w-full break-all text-zinc-500">
               @{username}
             </span>
 
           </div>
 
 
-          <div className="text-[15px] leading-relaxed">
+          <div className="space-y-2 text-[15px] leading-relaxed">
 
             <Link
               to={`/post/${post._id}`}
-              className="hover:opacity-80 transition-opacity"
+              className="group block transition-opacity hover:opacity-95"
             >
 
-              <span className="font-bold text-zinc-100">
+              <span className="font-bold text-zinc-100 transition-colors group-hover:text-brand-100">
                 {post.title}
               </span>
 
-              {" "}
-
-              
-
             </Link>
+
+            {postExcerpt && (
+              <p className="line-clamp-4 text-[14px] leading-relaxed text-zinc-300">
+                {postExcerpt}
+              </p>
+            )}
 
           </div>
 
 
           {/* TAGS */}
-          <div className="flex flex-wrap gap-2">
+          {tags.length > 0 && (
+            <div className="flex flex-wrap gap-2">
 
-            {post.tags?.map((tag, index) => (
+              {tags.map((tag, index) => (
 
-              <span
-                key={index}
-                className="rounded-lg bg-zinc-900 px-2 py-1 text-xs text-zinc-300 border border-white/10"
-              >
-                {tag}
-              </span>
+                <span
+                  key={`${tag}-${index}`}
+                  className="rounded-lg border border-white/10 bg-zinc-900 px-2 py-1 text-xs text-zinc-300"
+                >
+                  {tag}
+                </span>
 
-            ))}
+              ))}
 
-          </div>
+            </div>
+          )}
 
 
           {/* IMAGE */}
           {mediaUrl && (
 
-            <div className="mt-3 overflow-hidden rounded-[1.25rem] border border-white/[0.05]">
+            <div className="mt-3 overflow-hidden rounded-[1.25rem] border border-white/[0.08] bg-black/30">
 
               <img
                 src={mediaUrl}
                 alt={post.title}
-                className="w-full object-cover max-h-[500px]"
+                className="max-h-[500px] w-full object-cover transition-transform duration-500 hover:scale-[1.01]"
+                loading="lazy"
               />
 
             </div>
@@ -240,52 +273,52 @@ function FeedCard({ post }) {
 
           {/* CODE */}
           {post.iscode && (
-            <>
-           <div className="flex items-center  justify-between  border-white/10 bg-[#31395A]  py-4 ">
+            <div className="mt-2 overflow-hidden rounded-2xl border border-white/10 bg-[#272d44]">
+              <div className="flex items-center justify-between bg-[#31395A] px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <div className="h-3 w-3 rounded-full bg-red-400"></div>
+                  <div className="h-3 w-3 rounded-full bg-yellow-400"></div>
+                  <div className="h-3 w-3 rounded-full bg-red-500"></div>
+                </div>
 
-                    <div className="flex items-center gap-2">
-                      <div className="h-3 w-3 rounded-full bg-red-400"></div>
-                      <div className="h-3 w-3 rounded-full bg-yellow-400"></div>
-                      <div className="h-3 w-3 rounded-full bg-green-400"></div>
-                    </div>
+                <p className="text-xs uppercase tracking-[0.12em] text-zinc-300">
+                  {post.language || "code snippet"}
+                </p>
+              </div>
 
-                    <p className="text-xs uppercase tracking-[0.12em] text-zinc-300">
-                      {post.language || "code snippet"}
-                    </p>
-                  </div>
-
-           <Editor 
-              height="200px"
-              defaultLanguage={post.language || "python"}
-              theme="vs-dark"
-              defaultValue={ post.code}
-              options={{
-                fontSize: 14,
-                minimap: {
-                  enabled: false,
-                },
-                scrollBeyondLastLine: false,
-                wordWrap: "on",
-                lineNumbersMinChars: 3,
-                glyphMargin: false,
-                folding: false,
-                lineDecorationsWidth: 10,
-                readOnly: true,
-                renderLineHighlight: "none",
-              }}
-           />
-
-            </>
-
+              <Editor
+                height="200px"
+                defaultLanguage={post.language || "python"}
+                theme="vs-dark"
+                defaultValue={post.code}
+                options={{
+                  fontSize: 14,
+                  minimap: {
+                    enabled: false,
+                  },
+                  scrollBeyondLastLine: false,
+                  wordWrap: "on",
+                  lineNumbersMinChars: 3,
+                  glyphMargin: false,
+                  folding: false,
+                  lineDecorationsWidth: 10,
+                  readOnly: true,
+                  renderLineHighlight: "none",
+                }}
+              />
+            </div>
           )}
 
 
           {/* ACTIONS */}
-          <div className="flex items-center gap-6 pt-2">
+          <div className="flex flex-wrap items-center gap-3 pt-2 sm:gap-4">
 
             <button
               onClick={handleLike}
-              className="flex items-center gap-2 text-zinc-300 hover:text-white"
+              className={`inline-flex items-center gap-2 rounded-xl border px-2.5 py-1.5 text-sm tabular-nums transition-all duration-200 active:scale-[0.98] ${liked
+                ? "border-red-400/35 bg-red-500/10 text-red-100"
+                : "border-white/10 text-zinc-300 hover:border-white/20 hover:text-white"
+                }`}
             >
 
               <UpvoteIcon />
@@ -301,7 +334,7 @@ function FeedCard({ post }) {
               onClick={() =>
                 navigate(`/post/${post._id}`)
               }
-              className="flex items-center gap-2 text-zinc-400 hover:text-zinc-200"
+              className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-2.5 py-1.5 text-sm text-zinc-400 transition-all duration-200 hover:border-white/20 hover:text-zinc-200 active:scale-[0.98]"
             >
 
               <CommentIcon />
@@ -313,11 +346,11 @@ function FeedCard({ post }) {
             </button>
 
 
-            <div className="flex items-center gap-2 text-zinc-500">
+            <div className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-2.5 py-1.5 text-sm text-zinc-500">
 
               <EyeIcon />
 
-              <span>
+              <span className="tabular-nums">
                 {post.views?.length || 0}
               </span>
 
@@ -475,12 +508,12 @@ console.log(searchpost)
                   onClick={() =>
                     setActiveCategory(category)
                   }
-                  className={`rounded-xl border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em]
+                  className={`rounded-xl border px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] transition-all duration-200 active:scale-[0.98]
 
                   ${
                     activeCategory === category
-                      ? "border-brand-300/50 bg-brand-300/20 text-brand-100"
-                      : "border-white/10 bg-black text-zinc-400 hover:border-white/20 hover:text-zinc-200"
+                      ? "border-brand-300/50 bg-brand-300/20 text-brand-100 shadow-[0_0_0_1px_rgba(239,68,68,0.14)]"
+                      : "border-white/10 bg-black text-zinc-400 hover:border-white/20 hover:text-zinc-200 hover:-translate-y-px"
                   }`}
                 >
                   {category}
@@ -550,7 +583,7 @@ console.log(searchpost)
             onClick={() =>
               setActiveCategory("All")
             }
-            className="mt-5 rounded-xl bg-brand-400 px-4 py-2 text-sm font-semibold text-black hover:bg-brand-300"
+            className="mt-5 rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white transition-all duration-200 hover:bg-brand-400 active:scale-[0.98]"
           >
             Show all
           </button>

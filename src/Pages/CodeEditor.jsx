@@ -10,7 +10,7 @@ export default function CodeEditor() {
                 <div className="h-12 bg-[#3A415F] flex items-center px-4 gap-2 border-b border-white/10">
                     <div className="w-4 h-4 rounded-full bg-red-400"></div>
                     <div className="w-4 h-4 rounded-full bg-yellow-400"></div>
-                    <div className="w-4 h-4 rounded-full bg-green-400"></div>
+                    <div className="w-4 h-4 rounded-full bg-red-500"></div>
                 </div>
 
                 {/* Editor */}
