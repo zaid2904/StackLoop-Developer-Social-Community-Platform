@@ -1,8 +1,7 @@
 ﻿import { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { Link, NavLink, Route, BrowserRouter as Router, Routes, useLocation } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
-import { logout } from "./features/auth/authSlice";
 import CodeEditor from "./Pages/CodeEditor";
 import CreatePostPage from "./Pages/CreatePostPage";
 import DashboardPage from "./Pages/DashboardPage";
@@ -103,7 +102,6 @@ function MainRoutes({ search, setSearch, searchpost, setSearchpost }) {
 }
 
 function TopHeader({ search, setSearch, searchpost, setSearchpost }) {
-  const dispatch = useDispatch();
   const { token, user } = useSelector((state) => state.auth);
 
 const handlechange=async (e)=>{
@@ -173,15 +171,6 @@ console.log(response.data);
                 >
                   {(user?.username || user?.name || "U").slice(0, 2)}
                 </NavLink>
-                <button
-                  onClick={() => {
-                    dispatch(logout());
-                    localStorage.clear();
-                  }}
-                  className="rounded-xl border border-white/10 px-3 py-2 text-sm text-zinc-400 transition-all duration-200 hover:border-red-400/30 hover:text-red-200"
-                >
-                  Logout
-                </button>
               </>
             ) : (
               <>

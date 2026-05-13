@@ -1,12 +1,17 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import Avatar from "../components/UI/Avatar";
 import Button from "../components/UI/Button";
 import Card from "../components/UI/Card";
 import InputField from "../components/UI/InputField";
 import Modal from "../components/UI/Modal";
+import { logout } from "../features/auth/authSlice";
 import { getCurrentUserProfile, updateProfile } from "../services/userService";
 
 export default function ProfilePage() {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [openModal, setOpenModal] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -75,6 +80,11 @@ export default function ProfilePage() {
     }
   };
 
+  const handleLogout = () => {
+    dispatch(logout());
+    navigate("/login", { replace: true });
+  };
+
   return (
     <div className="space-y-6">
       <Card className="overflow-hidden border-brand-300/20 bg-gradient-to-br from-zinc-950 to-brand-900/20 p-0">
@@ -126,6 +136,22 @@ export default function ProfilePage() {
                 <p className="text-sm text-zinc-500">No social links added.</p>
               )}
             </div>
+          </Card>
+
+          <Card className="p-4">
+            <p className="app-chip">Account</p>
+            <p className="mt-3 text-sm leading-6 text-zinc-400">
+              Manage your session and security settings from one place.
+            </p>
+            <Button
+              type="button"
+              variant="danger"
+              className="mt-4 w-full justify-center"
+              onClick={handleLogout}
+              aria-label="Log out of your account"
+            >
+              Log out
+            </Button>
           </Card>
         </div>
 
