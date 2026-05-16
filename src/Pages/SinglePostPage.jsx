@@ -1,17 +1,49 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import Avatar from "../components/UI/Avatar";
+import Button from "../components/UI/Button";
 import Card from "../components/UI/Card";
 import CodeSnippetWindow from "../components/UI/CodeSnippetWindow";
+import Modal from "../components/UI/Modal";
 import Skeleton from "../components/UI/Skeleton";
 import Toast from "../components/UI/Toast";
 import { createComment, getCommentsByPostId, getPostById, likePost } from "../services/postService";
 
 const SEED_COMMENTS = [
-  { id: "s1", author: "Priya Sharma", profilePic: "https://i.pravatar.cc/150?u=priya", text: "Clear writing and practical examples. This was useful.", date: new Date(Date.now() - 3600000 * 6).toISOString(), likes: 12 },
-  { id: "s2", author: "James Carter", profilePic: "https://i.pravatar.cc/150?u=james", text: "Good framing. I like the workflow section.", date: new Date(Date.now() - 3600000 * 14).toISOString(), likes: 8 },
-  { id: "s3", author: "Aisha Yusuf", profilePic: "https://i.pravatar.cc/150?u=aisha", text: "The repeatable process takeaway is spot on.", date: new Date(Date.now() - 3600000 * 28).toISOString(), likes: 5 },
+  {
+    id: "s1",
+    userId: "seed-1",
+    author: "Priya Sharma",
+    profilePic: "https://i.pravatar.cc/150?u=priya",
+    text: "Clear writing and practical examples. This was useful.",
+    date: new Date(Date.now() - 3600000 * 6).toISOString(),
+    likes: 12,
+    depth: 0,
+    parentId: null,
+  },
+  {
+    id: "s2",
+    userId: "seed-2",
+    author: "James Carter",
+    profilePic: "https://i.pravatar.cc/150?u=james",
+    text: "Good framing. I like the workflow section.",
+    date: new Date(Date.now() - 3600000 * 14).toISOString(),
+    likes: 8,
+    depth: 0,
+    parentId: null,
+  },
+  {
+    id: "s3",
+    userId: "seed-3",
+    author: "Aisha Yusuf",
+    profilePic: "https://i.pravatar.cc/150?u=aisha",
+    text: "The repeatable process takeaway is spot on.",
+    date: new Date(Date.now() - 3600000 * 28).toISOString(),
+    likes: 5,
+    depth: 0,
+    parentId: null,
+  },
 ];
 
 const LIST_ITEM_REGEX = /^(\s*)([-*+]|(\d+)\.)\s+(.*)$/;
@@ -243,11 +275,64 @@ function timeAgo(dateString) {
   return new Date(dateString).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
+function CommentActionIcon({ type, className = "h-4 w-4" }) {
+  if (type === "menu") {
+    return (
+      <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+        <circle cx="12" cy="5" r="1.7" />
+        <circle cx="12" cy="12" r="1.7" />
+        <circle cx="12" cy="19" r="1.7" />
+      </svg>
+    );
+  }
+
+  if (type === "edit") {
+    return (
+      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <path d="M4 20h4l10-10a2 2 0 0 0-4-4L4 16v4z" />
+      </svg>
+    );
+  }
+
+  if (type === "trash") {
+    return (
+      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <path d="M4 7h16" />
+        <path d="M9 7V5h6v2" />
+        <path d="M7.5 7l1 12h7l1-12" />
+      </svg>
+    );
+  }
+
+  if (type === "chat") {
+    return (
+      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+        <path d="M6 5h12a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3h-6l-4 3v-3H6a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3z" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <path d="M12 5v14" />
+      <path d="M5 12h14" />
+    </svg>
+  );
+}
+
+function getCommentDepth(comment) {
+  const depthValue = Number(comment?.depth);
+  if (Number.isFinite(depthValue) && depthValue > 0) return depthValue;
+  return comment?.parentId ? 1 : 0;
+}
+
 export default function SinglePostPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth);
   const userId = user?.id || user?._id || user?.user?.id || user?.user?._id;
+  const currentUserLabel =
+    (user?.name || user?.username || user?.user?.name || user?.user?.username || "").trim().toLowerCase();
 
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -257,6 +342,10 @@ export default function SinglePostPage() {
   const [comments, setComments] = useState([]);
   const [commentText, setCommentText] = useState("");
   const [commentLoading, setCommentLoading] = useState(false);
+  const [activeCommentMenuId, setActiveCommentMenuId] = useState(null);
+  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [editingCommentText, setEditingCommentText] = useState("");
+  const [commentDeleteTarget, setCommentDeleteTarget] = useState(null);
   const [copiedCodeId, setCopiedCodeId] = useState(null);
 
   useEffect(() => {
@@ -271,13 +360,17 @@ export default function SinglePostPage() {
           const commentsData = await getCommentsByPostId(id);
           if (commentsData.comments?.length) {
             setComments(
-              commentsData.comments.map((comment) => ({
-                id: comment._id,
+              commentsData.comments.map((comment, index) => ({
+                id: comment._id || `comment-${index}`,
+                userId: comment.user?._id || comment.user?.id || null,
                 author: comment.user?.name || "Unknown",
-                profilePic: null,
-                text: comment.text,
-                date: comment.createdAt,
-                likes: 0,
+                profilePic: comment.user?.profilePic || comment.user?.avatar || null,
+                text: comment.text || "",
+                date: comment.createdAt || new Date().toISOString(),
+                likes: Array.isArray(comment.likes) ? comment.likes.length : 0,
+                depth: Number(comment.depth) || (comment.parentId || comment.parentCommentId || comment.parentComment ? 1 : 0),
+                parentId: comment.parentId || comment.parentCommentId || comment.parentComment || null,
+                editedAt: comment.updatedAt || null,
                 isNew: false,
               }))
             );
@@ -313,6 +406,25 @@ export default function SinglePostPage() {
     fetchPost();
   }, [id, userId]);
 
+  useEffect(() => {
+    const closeCommentMenu = () => setActiveCommentMenuId(null);
+    const handleEscape = (event) => {
+      if (event.key === "Escape") {
+        setActiveCommentMenuId(null);
+        setEditingCommentId(null);
+        setEditingCommentText("");
+      }
+    };
+
+    window.addEventListener("click", closeCommentMenu);
+    window.addEventListener("keydown", handleEscape);
+
+    return () => {
+      window.removeEventListener("click", closeCommentMenu);
+      window.removeEventListener("keydown", handleEscape);
+    };
+  }, []);
+
   const handleLike = async () => {
     if (!user) {
       setToast({ message: "Please log in to like this post", type: "error" });
@@ -342,12 +454,16 @@ export default function SinglePostPage() {
       const newCommentData = result.commentsaved;
       setComments((prev) => [
         {
-          id: newCommentData._id,
+          id: newCommentData._id || `local-${Date.now()}`,
+          userId: newCommentData.user?._id || newCommentData.user?.id || userId || null,
           author: newCommentData.user?.name || "You",
-          profilePic: null,
+          profilePic: newCommentData.user?.profilePic || newCommentData.user?.avatar || null,
           text: newCommentData.text,
-          date: newCommentData.createdAt,
+          date: newCommentData.createdAt || new Date().toISOString(),
           likes: 0,
+          depth: 0,
+          parentId: null,
+          editedAt: null,
           isNew: true,
         },
         ...prev,
@@ -359,6 +475,78 @@ export default function SinglePostPage() {
     } finally {
       setCommentLoading(false);
     }
+  };
+
+  const isCommentOwner = (comment) => {
+    if (userId && comment?.userId) {
+      return String(comment.userId) === String(userId);
+    }
+
+    if (!currentUserLabel || !comment?.author) return false;
+    return String(comment.author).trim().toLowerCase() === currentUserLabel;
+  };
+
+  const toggleCommentMenu = (event, commentId) => {
+    event.stopPropagation();
+    setActiveCommentMenuId((current) => (current === commentId ? null : commentId));
+  };
+
+  const handleStartEditComment = (event, comment) => {
+    event.stopPropagation();
+    setActiveCommentMenuId(null);
+    setEditingCommentId(comment.id);
+    setEditingCommentText(comment.text || "");
+  };
+
+  const handleCancelEditComment = () => {
+    setEditingCommentId(null);
+    setEditingCommentText("");
+  };
+
+  const handleSaveEditedComment = (commentId) => {
+    const nextText = editingCommentText.trim();
+    if (!nextText) {
+      setToast({ message: "Comment cannot be empty.", type: "error" });
+      return;
+    }
+
+    setComments((currentComments) =>
+      currentComments.map((comment) =>
+        comment.id === commentId
+          ? {
+              ...comment,
+              text: nextText,
+              editedAt: new Date().toISOString(),
+            }
+          : comment
+      )
+    );
+
+    setEditingCommentId(null);
+    setEditingCommentText("");
+    setToast({ message: "Comment updated.", type: "success" });
+  };
+
+  const handleRequestDeleteComment = (event, comment) => {
+    event.stopPropagation();
+    setActiveCommentMenuId(null);
+    setCommentDeleteTarget(comment);
+  };
+
+  const handleConfirmDeleteComment = () => {
+    if (!commentDeleteTarget) return;
+
+    setComments((currentComments) =>
+      currentComments.filter((comment) => comment.id !== commentDeleteTarget.id)
+    );
+
+    if (editingCommentId === commentDeleteTarget.id) {
+      setEditingCommentId(null);
+      setEditingCommentText("");
+    }
+
+    setCommentDeleteTarget(null);
+    setToast({ message: "Comment deleted.", type: "info" });
   };
 
   const handleShare = async () => {
@@ -466,20 +654,29 @@ export default function SinglePostPage() {
           </Card>
 
           <section id="comments" className="space-y-4">
-            <Card className="p-4">
-              <p className="app-chip">Discussion</p>
+            <Card className="p-4 sm:p-5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="app-chip">Discussion</p>
+                <span className="rounded-full border border-white/10 bg-black/70 px-3 py-1 text-xs font-medium text-zinc-400">
+                  {comments.length} comments
+                </span>
+              </div>
+
               <form onSubmit={handleAddComment} className="mt-4 flex gap-3">
                 <Avatar size="md" fallback="You" />
                 <div className="flex-1 space-y-3">
                   <textarea
                     value={commentText}
                     onChange={(e) => setCommentText(e.target.value)}
-                    className="min-h-[110px] w-full rounded-2xl border border-white/10 bg-black px-4 py-3 text-sm text-zinc-100 placeholder:text-zinc-600 focus:border-brand-300 focus:outline-none"
-                    placeholder="Add your comment"
+                    className="min-h-[118px] w-full rounded-2xl border border-white/10 bg-black px-4 py-3 text-sm leading-6 text-zinc-100 placeholder:text-zinc-600 transition-[border-color,box-shadow] duration-200 focus:border-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-300/20"
+                    placeholder="Share your thoughts"
                     required
                   />
                   <div className="flex justify-end">
-                    <button disabled={commentLoading || !commentText.trim()} className="rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-400 disabled:opacity-60">
+                    <button
+                      disabled={commentLoading || !commentText.trim()}
+                      className="rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white transition-all duration-200 hover:bg-brand-400 active:scale-[0.98] disabled:opacity-60 disabled:active:scale-100"
+                    >
                       {commentLoading ? "Posting..." : "Post comment"}
                     </button>
                   </div>
@@ -489,22 +686,111 @@ export default function SinglePostPage() {
 
             <div className="space-y-3">
               {comments.length === 0 ? (
-                <Card className="p-4 text-sm text-zinc-500">No comments yet.</Card>
+                <Card className="p-8 text-center">
+                  <span className="mx-auto inline-flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-zinc-900/80 text-zinc-400">
+                    <CommentActionIcon type="chat" className="h-5 w-5" />
+                  </span>
+                  <p className="mt-3 text-sm font-medium text-zinc-300">No comments yet</p>
+                  <p className="mt-1 text-xs text-zinc-500">Start the conversation with the first comment.</p>
+                </Card>
               ) : (
-                comments.map((comment) => (
-                  <Card key={comment.id} className={`${comment.isNew ? "border-brand-300/35" : ""} p-4`}>
-                    <div className="flex gap-3">
-                      <Avatar src={comment.profilePic} fallback={comment.author} size="md" />
-                      <div className="flex-1 space-y-2">
-                        <div className="flex items-center justify-between gap-2">
-                          <p className="text-sm font-semibold text-zinc-100">{comment.author}</p>
-                          <p className="text-xs text-zinc-500">{timeAgo(comment.date)}</p>
+                comments.map((comment) => {
+                  const owner = isCommentOwner(comment);
+                  const isEditing = editingCommentId === comment.id;
+                  const depth = Math.min(getCommentDepth(comment), 2);
+                  const replyOffset = depth > 0 ? { marginLeft: `${depth * 16}px` } : undefined;
+
+                  return (
+                    <Card
+                      key={comment.id}
+                      className={`${comment.isNew ? "border-brand-300/35" : ""} group p-4 sm:p-5 transition-[transform,border-color,background-color,box-shadow] duration-200 hover:-translate-y-[1px] hover:border-white/20 hover:bg-zinc-900/85`}
+                      style={replyOffset}
+                    >
+                      <div className={`flex gap-3 ${depth > 0 ? "rounded-xl border-l border-brand-300/20 pl-3" : ""}`}>
+                        <Avatar src={comment.profilePic} fallback={comment.author} size="md" />
+
+                        <div className="min-w-0 flex-1 space-y-2">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <p className="truncate text-sm font-semibold text-zinc-100">{comment.author}</p>
+                                {comment.editedAt && (
+                                  <span className="rounded-full border border-white/10 bg-zinc-900 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-zinc-500">
+                                    edited
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs text-zinc-500">{timeAgo(comment.date)}</p>
+                            </div>
+
+                            {owner && (
+                              <div className="relative shrink-0" onClick={(event) => event.stopPropagation()}>
+                                <button
+                                  type="button"
+                                  onClick={(event) => toggleCommentMenu(event, comment.id)}
+                                  className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-black/75 text-zinc-400 opacity-80 transition-all duration-200 hover:border-white/20 hover:text-zinc-200 group-hover:opacity-100"
+                                  aria-label={`Open actions for comment by ${comment.author}`}
+                                >
+                                  <CommentActionIcon type="menu" className="h-4 w-4" />
+                                </button>
+
+                                {activeCommentMenuId === comment.id && (
+                                  <div className="absolute right-0 top-10 z-20 w-36 overflow-hidden rounded-xl border border-white/10 bg-zinc-950/95 p-1.5 shadow-panel backdrop-blur-sm">
+                                    <button
+                                      type="button"
+                                      onClick={(event) => handleStartEditComment(event, comment)}
+                                      className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm text-zinc-300 transition-colors hover:bg-zinc-900 hover:text-zinc-100"
+                                    >
+                                      <CommentActionIcon type="edit" className="h-3.5 w-3.5" />
+                                      Edit
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={(event) => handleRequestDeleteComment(event, comment)}
+                                      className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm text-red-200 transition-colors hover:bg-red-500/15 hover:text-red-100"
+                                    >
+                                      <CommentActionIcon type="trash" className="h-3.5 w-3.5" />
+                                      Delete
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+
+                          {isEditing ? (
+                            <div className="comment-edit-shell rounded-xl border border-white/10 bg-black/70 p-3">
+                              <textarea
+                                value={editingCommentText}
+                                onChange={(event) => setEditingCommentText(event.target.value)}
+                                className="min-h-[96px] w-full rounded-xl border border-white/10 bg-black px-3 py-2 text-sm leading-6 text-zinc-100 placeholder:text-zinc-600 transition-[border-color,box-shadow] duration-200 focus:border-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-300/20"
+                                placeholder="Edit your comment"
+                                autoFocus
+                              />
+                              <div className="mt-3 flex flex-wrap justify-end gap-2">
+                                <Button type="button" variant="ghost" onClick={handleCancelEditComment}>
+                                  Cancel
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="primary"
+                                  onClick={() => handleSaveEditedComment(comment.id)}
+                                  disabled={!editingCommentText.trim()}
+                                >
+                                  Save
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="whitespace-pre-wrap break-words text-sm leading-7 text-zinc-300">
+                              {comment.text}
+                            </p>
+                          )}
                         </div>
-                        <p className="text-sm text-zinc-300">{comment.text}</p>
                       </div>
-                    </div>
-                  </Card>
-                ))
+                    </Card>
+                  );
+                })
               )}
             </div>
           </section>
@@ -532,6 +818,31 @@ export default function SinglePostPage() {
           </Card>
         </aside>
       </article>
+
+      <Modal
+        isOpen={Boolean(commentDeleteTarget)}
+        onClose={() => setCommentDeleteTarget(null)}
+        title="Delete comment"
+      >
+        {commentDeleteTarget && (
+          <div className="space-y-4">
+            <p className="text-sm leading-6 text-zinc-400">
+              Delete this comment permanently?
+            </p>
+            <p className="rounded-xl border border-white/10 bg-black/65 px-3 py-2 text-sm text-zinc-300">
+              {commentDeleteTarget.text}
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="ghost" onClick={() => setCommentDeleteTarget(null)}>
+                Cancel
+              </Button>
+              <Button type="button" variant="danger" onClick={handleConfirmDeleteComment}>
+                Delete
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </>
   );
 }
