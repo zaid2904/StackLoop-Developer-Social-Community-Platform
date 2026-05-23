@@ -8,6 +8,7 @@ import CodeSnippetWindow from "../components/UI/CodeSnippetWindow";
 import Modal from "../components/UI/Modal";
 import Skeleton from "../components/UI/Skeleton";
 import Toast from "../components/UI/Toast";
+import axios from "../services/api";
 import { createComment, getCommentsByPostId, getPostById, likePost } from "../services/postService";
 
 const SEED_COMMENTS = [
@@ -506,6 +507,7 @@ export default function SinglePostPage() {
   const handleSaveEditedComment = (commentId) => {
     const nextText = editingCommentText.trim();
     if (!nextText) {
+      
       setToast({ message: "Comment cannot be empty.", type: "error" });
       return;
     }
@@ -521,6 +523,8 @@ export default function SinglePostPage() {
           : comment
       )
     );
+axios.put(`/auth/v2/comment/${commentId}`, {text : nextText})
+console.log(commentId);
 
     setEditingCommentId(null);
     setEditingCommentText("");
@@ -708,7 +712,7 @@ export default function SinglePostPage() {
                     >
                       <div className={`flex gap-3 ${depth > 0 ? "rounded-xl border-l border-brand-300/20 pl-3" : ""}`}>
                         <Avatar src={comment.profilePic} fallback={comment.author} size="md" />
-
+                        
                         <div className="min-w-0 flex-1 space-y-2">
                           <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0">
@@ -777,7 +781,7 @@ export default function SinglePostPage() {
                                   onClick={() => handleSaveEditedComment(comment.id)}
                                   disabled={!editingCommentText.trim()}
                                 >
-                                  Save
+                                  Save 
                                 </Button>
                               </div>
                             </div>
