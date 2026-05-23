@@ -2,7 +2,8 @@ import axios from "axios";
 
 const api = axios.create({
   baseURL:
-    "https://stackloop-developer-community-platform.onrender.com/",
+    // "https://stackloop-developer-community-platform.onrender.com/",
+    "http://localhost:3000"
 });
 
 
