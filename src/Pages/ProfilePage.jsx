@@ -337,71 +337,55 @@ export default function ProfilePage() {
 
       <Card className="overflow-hidden border-brand-300/20 bg-gradient-to-br from-zinc-950 to-brand-900/20 p-0">
         <div className="p-6 sm:p-8">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-            <div className="flex items-end gap-4">
-              <Avatar src={profile.profilePic} fallback={profile.username} size="xl" />
-              <div>
-                <span className="app-chip">Profile</span>
-                <h1 className="mt-2 font-display text-5xl text-zinc-100">{profile.username}</h1>
-                <p className="text-sm text-zinc-500">@{profileHandle}</p>
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+            <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
+              <div className="shrink-0">
+                <Avatar src={profile.profilePic} fallback={profile.username} size="xl" />
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <span className="app-chip">Profile</span>
+                  <h1 className="mt-2 font-display text-5xl text-zinc-100">{profile.username}</h1>
+                  <p className="text-sm text-zinc-500">@{profileHandle}</p>
+                </div>
+                <div className="max-w-lg">
+                  <p className="text-sm leading-6 text-zinc-400">{profile.bio || "No bio added yet."}</p>
+                </div>
+                {links.some((link) => link.url) && (
+                  <div className="flex flex-wrap gap-2">
+                    {links.map((link) =>
+                      link.url ? (
+                        <a key={link.name} href={link.url} target="_blank" rel="noreferrer" className="rounded-xl border border-white/10 bg-black px-3 py-1.5 text-xs text-zinc-300 hover:border-brand-300/35 hover:text-brand-200 transition-colors">
+                          {link.name}
+                        </a>
+                      ) : null
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <div className="rounded-2xl border border-white/10 bg-black px-4 py-3 text-center">
-                <p className="text-xl font-bold text-zinc-100">{profile.postsCount || 0}</p>
-                <p className="text-xs text-zinc-500">posts</p>
+            <div className="flex flex-col gap-4 lg:items-end">
+              <div className="flex items-center gap-2">
+                <div className="rounded-2xl border border-white/10 bg-black px-4 py-3 text-center min-w-[80px]">
+                  <p className="text-xl font-bold text-zinc-100">{profile.postsCount || 0}</p>
+                  <p className="text-xs text-zinc-500">posts</p>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-black px-4 py-3 text-center min-w-[80px]">
+                  <p className="text-xl font-bold text-zinc-100">{links.filter((link) => link.url).length}</p>
+                  <p className="text-xs text-zinc-500">links</p>
+                </div>
               </div>
-              <div className="rounded-2xl border border-white/10 bg-black px-4 py-3 text-center">
-                <p className="text-xl font-bold text-zinc-100">{links.filter((link) => link.url).length}</p>
-                <p className="text-xs text-zinc-500">links</p>
+              <div className="flex flex-col items-stretch gap-2 w-full sm:w-auto min-w-[168px]">
+                <Button className="w-full justify-center" variant="secondary" onClick={() => setOpenModal(true)}>Edit profile</Button>
+                <button type="button" onClick={handleLogout} className="text-xs font-medium text-zinc-500 hover:text-red-400 transition-colors text-center py-1">Log out</button>
               </div>
-              <Button variant="secondary" onClick={() => setOpenModal(true)}>Edit profile</Button>
             </div>
           </div>
         </div>
       </Card>
 
-      <div className="grid gap-6 lg:grid-cols-[300px_minmax(0,1fr)]">
-        <div className="space-y-4">
-          <Card className="p-4">
-            <p className="app-chip">About</p>
-            <p className="mt-3 text-sm leading-6 text-zinc-400">{profile.bio || "No bio added yet."}</p>
-          </Card>
-
-          <Card className="p-4">
-            <p className="app-chip">Links</p>
-            <div className="mt-3 space-y-2">
-              {links.some((link) => link.url) ? (
-                links.map((link) =>
-                  link.url ? (
-                    <a key={link.name} href={link.url} target="_blank" rel="noreferrer" className="block rounded-xl border border-white/10 bg-black px-3 py-2 text-sm text-zinc-300 hover:border-brand-300/35 hover:text-brand-200">
-                      {link.name}
-                    </a>
-                  ) : null
-                )
-              ) : (
-                <p className="text-sm text-zinc-500">No social links added.</p>
-              )}
-            </div>
-          </Card>
-
-          <Card className="p-4">
-            <p className="app-chip">Account</p>
-            <p className="mt-3 text-sm leading-6 text-zinc-400">
-              Manage your session and security settings from one place.
-            </p>
-            <Button
-              type="button"
-              variant="danger"
-              className="mt-4 w-full justify-center"
-              onClick={handleLogout}
-              aria-label="Log out of your account"
-            >
-              Log out
-            </Button>
-          </Card>
-        </div>
+      <div className="grid gap-6">
 
         <Card className="p-5 sm:p-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

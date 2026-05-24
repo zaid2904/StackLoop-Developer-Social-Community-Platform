@@ -535,6 +535,9 @@ console.log(commentId);
     event.stopPropagation();
     setActiveCommentMenuId(null);
     setCommentDeleteTarget(comment);
+    axios.delete(`/auth/v2/comment/${comment.id}`)
+    console.log(comment);
+    
   };
 
   const handleConfirmDeleteComment = () => {
