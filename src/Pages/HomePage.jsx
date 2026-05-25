@@ -1,25 +1,25 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
+import { Link, useNavigate } from "react-router-dom";
 
 import hljs from "highlight.js/lib/core";
-import javascript from "highlight.js/lib/languages/javascript";
-import typescript from "highlight.js/lib/languages/typescript";
-import xml from "highlight.js/lib/languages/xml";
+import bash from "highlight.js/lib/languages/bash";
 import css from "highlight.js/lib/languages/css";
+import javascript from "highlight.js/lib/languages/javascript";
 import json from "highlight.js/lib/languages/json";
 import python from "highlight.js/lib/languages/python";
-import bash from "highlight.js/lib/languages/bash";
+import typescript from "highlight.js/lib/languages/typescript";
+import xml from "highlight.js/lib/languages/xml";
 
 import Card from "../components/UI/Card";
 import Skeleton from "../components/UI/Skeleton";
 
+import { Editor } from "@monaco-editor/react";
 import {
-  getAllPosts,
   categogary,
+  getAllPosts,
   likePost,
 } from "../services/postService";
-import { Editor } from "@monaco-editor/react";
 
 hljs.registerLanguage("javascript", javascript);
 hljs.registerLanguage("typescript", typescript);
@@ -527,9 +527,9 @@ console.log(searchpost)
 
 
           {/* STATS */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="flex justify-end">
 
-            <div className="rounded-2xl border border-white/10 bg-black/60 p-4">
+            <div className="w-full max-w-[220px] rounded-2xl border border-white/10 bg-black/60 p-4">
 
               <p className="text-xs uppercase tracking-[0.16em] text-zinc-500">
                 Posts
